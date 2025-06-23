@@ -31,7 +31,7 @@ with app.app_context():
 
 @app.route("/")
 def index():
-    return "Blessed Guardian Railway + PostgreSQL is running!"
+    return "Blessed Guardian Railway + PostgreSQL with Admin Kick is running!"
 
 @app.route("/callback", methods=['GET', 'POST'])
 def callback():
@@ -61,6 +61,16 @@ def extract_mention(event):
         return event.message.mention.mentionees[0].user_id
     return None
 
+def get_display_name(user_id, group_id=None):
+    try:
+        if group_id:
+            profile = line_bot_api.get_group_member_profile(group_id, user_id)
+        else:
+            profile = line_bot_api.get_profile(user_id)
+        return profile.display_name
+    except Exception as e:
+        return f"{user_id[:8]}..."
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
@@ -76,7 +86,7 @@ def handle_message(event):
             return
 
         if text == "!admins":
-            admin_list = '\n'.join(get_admins())
+            admin_list = '\n'.join([get_display_name(uid, group_id) for uid in get_admins()])
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(f"👑 Current admins:\n{admin_list}")
@@ -99,7 +109,7 @@ def handle_message(event):
         elif text.startswith("!kick"):
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage("❌ Sorry, I cannot kick users automatically.")
+                TextSendMessage("❌ Sorry, LINE doesn’t allow this bot to kick by message unless it’s Admin. Please remove manually.")
             )
 
         else:
@@ -120,6 +130,27 @@ def handle_join(event):
         event.reply_token,
         TextSendMessage("👋 Blessed Guardian is online on Railway!")
     )
+
+from linebot.models import MemberJoinedEvent
+
+@handler.add(MemberJoinedEvent)
+def handle_member_joined(event):
+    adder_id = event.source.user_id
+    group_id = getattr(event.source, 'group_id', None)
+    joined_members = event.joined.members
+
+    if not is_admin(adder_id):
+        # Kick each joined member if possible
+        for m in joined_members:
+            try:
+                line_bot_api.kickout_group_member(group_id, m.user_id)
+            except Exception as e:
+                print(f"Kick failed: {e}")
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage("⚠️ Only admins can add members. Unauthorized additions have been removed.")
+        )
 
 if __name__ == "__main__":
     app.run(port=5000)
