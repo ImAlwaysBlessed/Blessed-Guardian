@@ -3,3 +3,4 @@ gunicorn
 line-bot-sdk
 psycopg2-binary
 SQLAlchemy
+flask_sqlalchemy
