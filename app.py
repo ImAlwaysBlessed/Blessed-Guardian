@@ -69,28 +69,57 @@ def handle_message(event):
 
     if text.startswith("!"):
         if not is_admin(user_id):
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("❌ You are not an admin."))
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage("❌ You are not an admin.")
+            )
             return
-        if text.startswith("!admin"):
+
+        if text == "!admins":
+            admin_list = '\n'.join(get_admins())
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(f"👑 Current admins:\n{admin_list}")
+            )
+
+        elif text.startswith("!admin"):
             mention_id = extract_mention(event)
             if mention_id:
                 add_admin(mention_id)
-                line_bot_api.reply_message(event.reply_token, TextSendMessage("✅ User promoted to admin."))
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage("✅ User promoted to admin.")
+                )
             else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage("⚠️ Please mention a user to promote."))
-        elif text == "!admins":
-            admin_list = '\n'.join(get_admins())
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(f"👑 Current admins:\n{admin_list}"))
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage("⚠️ Please mention a user to promote.")
+                )
+
         elif text.startswith("!kick"):
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("❌ Sorry, I cannot kick users automatically."))
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage("❌ Sorry, I cannot kick users automatically.")
+            )
+
         else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage("⚠️ Unknown command."))
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage("⚠️ Unknown command.")
+            )
+
     elif text == "whoami":
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(f"Your user ID: {user_id}"))
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(f"Your user ID: {user_id}")
+        )
 
 @handler.add(JoinEvent)
 def handle_join(event):
-    line_bot_api.reply_message(event.reply_token, TextSendMessage("👋 Blessed Guardian is online on Railway!"))
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage("👋 Blessed Guardian is online on Railway!")
+    )
 
 if __name__ == "__main__":
     app.run(port=5000)
